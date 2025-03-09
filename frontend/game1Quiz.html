@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            .hide{
+                display:none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div>
+                <button class="start">start</button>
+            </div>
+            <div class="main hide">
+                <p class="question">question</p>
+                <div class="button"></div>
+                <button class="next">next</button>
+            </div>
+        </div>
+
+        <script>
+            const q=[
+                {
+                    question:"what is 2+2",
+                    choice:["3","4","5"],
+                    ans:"4"
+                },
+                {
+                    question:"what is capital of india",
+                    choice:["delhi","tn"],
+                    ans:"delhi"
+                },
+                {
+                    question:"what is 2*2",
+                    choice:["1","2","3","4"],
+                    ans:"4"
+                }
+            ]
+            let current=0;
+            let score=0;
+            let start=document.querySelector(".start");
+            let main=document.querySelector(".main");
+            let question=document.querySelector(".question");
+            let button=document.querySelector(".button");
+            let next=document.querySelector(".next");
+            start.addEventListener("click",loadQuestion);
+            next.addEventListener("click",inc);
+
+            function inc(){
+                button.innerHTML=""
+                current++;
+                loadQuestion();
+            }
+            function loadQuestion(){
+                if(current>2){
+                    main.innerHTML=`<p>your score is ${score}</p`
+                }
+                else{
+                    main.classList.remove("hide");
+                start.classList.add("hide");
+                let currentb=q[current];
+                question.textContent=currentb.question;
+                let op=currentb.choice;
+                op.forEach((el,index)=>{
+                    let b=document.createElement("button");
+                    let buttontext=op[index];
+                    b.textContent=buttontext
+                    
+                    button.appendChild(b);
+                    b.addEventListener("click",()=>verify(buttontext,b));
+                    
+                    
+                })
+                }
+                
+                
+                
+
+            }
+            function verify(buttontext,b){
+                let buttons = button.querySelectorAll("button"); 
+                if(q[current].ans==buttontext){
+                    b.style.backgroundColor="green"
+                    score++;
+                }
+                else{
+                    b.style.backgroundColor="red"
+                }
+                buttons.forEach(btn => btn.disabled = true);
+            }
+            // Fetch quiz data and ensure it is loaded before allowing the quiz to start
+            fetch("http://localhost:3000/game1/quiz/questions")
+                .then((res) => res.json())
+                .then((data) => {
+                    q = data.map(item => ({
+                        question: item.question,
+                        options: item.options
+                    }));
+                    console.log("Quiz data loaded:", q);
+                })
+                .catch((error) => console.error("Error fetching quiz data:", error));
+            
+        </script>
+    </body>
+</html>
+
+   

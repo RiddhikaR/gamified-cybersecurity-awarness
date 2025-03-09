@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+       
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-image: url('loginpic.png');
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        
+        .form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+            width: 350px; 
+            padding: 20px;
+        }
+
+       
+        .login, .signup {
+            background-color: transparent;
+            border:2px solid rgb(255, 255, 255,0.2);
+            color:white;
+            backdrop-filter:blur(20px);
+            padding: 40px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            display: none;
+            height: 350px; 
+        }
+        .login.active, .signup.active {
+            display: block;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            padding-right:0px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color:transparent;
+
+            border-radius:20px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color:rgb(209, 150, 224);
+            color:black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #835980;
+        }
+
+        .additional-links {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        
+        .additional-links a {
+            color: rgb(82, 12, 122);
+            text-decoration: underline;
+        }
+
+        
+        .forgot-password {
+            text-align: right;
+            width: 100%;
+            margin-bottom: 20px; 
+        }
+    </style>
+</head>
+<body>
+
+<div class="form">
+    
+    <div class="login active">
+        <h2>Login</h2>
+        <form >
+            <input type="text" placeholder="email" required  id="email">
+            <input type="password" placeholder="Password" id="pwd" required>
+            <div class="forgot-password">
+                <a style="color:rgb(230, 206, 57);" href="#">Forgot Password?</a>
+            </div>
+            <button type="submit" id="login">Login</button>
+        </form>
+        <div class="additional-links">
+            <p>If you don't have an account, <a href="javascript:void(0);" onclick="tog()" style="color:rgb(225, 206, 82);">Sign Up</a></p>
+        </div>
+    </div>
+
+    
+    
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let loginButton = document.getElementById("login");
+        loginButton.addEventListener("click", function (event) {
+            event.preventDefault(); // 🔥 Prevent form refresh
+            post(); // Call the login function
+        });
+    });
+
+    async function post() {
+        let email = document.getElementById("email").value; // 🔥 Get values inside function
+        let pwd = document.getElementById("pwd").value;
+
+        try {
+            const response = await fetch("http://localhost:3000/game1/quiz/user/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, pwd })
+            });
+
+            const data = await response.json(); // 🔥 Convert response to JSON
+
+            if (response.ok) {
+                localStorage.setItem("accessToken", data.accessToken); // 🔥 Store token
+                alert("Login successful!");
+                window.location.href = "thirdPage.html"; // 🔥 Redirect after login
+            } else {
+                alert("Login failed: " + data.message);
+            }
+        } catch (error) {
+            console.error("Error during login:", error);
+            alert("An error occurred while logging in.");
+        }
+    }
+</script>
+
+
+</body>
+</html>
