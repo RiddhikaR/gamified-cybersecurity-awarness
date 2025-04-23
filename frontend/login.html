@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login Page</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background-image: url('loginpic.png');
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+
+    .form {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      width: 350px;
+      padding: 20px;
+    }
+
+    .login, .signup {
+      background-color: transparent;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      backdrop-filter: blur(20px);
+      padding: 40px 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      display: none;
+      height: 350px;
+    }
+
+    .login.active, .signup.active {
+      display: block;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      background-color: transparent;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: rgb(209, 150, 224);
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #835980;
+    }
+
+    .additional-links {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .additional-links a {
+      color: rgb(82, 12, 122);
+      text-decoration: underline;
+    }
+
+    .forgot-password {
+      text-align: right;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="form">
+  <!-- Login Form -->
+  <div class="login active">
+    <h2>Login</h2>
+    <form>
+      <input type="text" placeholder="Email" required id="email" />
+      <input type="password" placeholder="Password" id="pwd" required />
+      
+      <button type="submit" id="login">Login</button>
+    </form>
+    <div class="additional-links">
+      <p>If you don't have an account, 
+        <a href="javascript:void(0);" onclick="tog()" style="color:rgb(225, 206, 82);">Sign Up</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Signup Form -->
+  <div class="signup">
+    <h2>Sign Up</h2>
+    <form>
+      <input type="text" placeholder="Full Name" required id="name" />
+      <input type="email" placeholder="Email" required id="signup-email" />
+      <input type="password" placeholder="Password" required id="signup-pwd" />
+      <button type="submit" id="signup">Sign Up</button>
+    </form>
+    <div class="additional-links">
+      <p>Already have an account? 
+        <a href="javascript:void(0);" onclick="tog()" style="color:rgb(225, 206, 82);">Login</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function tog() {
+    document.querySelector(".login").classList.toggle("active");
+    document.querySelector(".signup").classList.toggle("active");
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("login").addEventListener("click", function (event) {
+      event.preventDefault();
+      postLogin();
+    });
+
+    document.getElementById("signup").addEventListener("click", function (event) {
+      event.preventDefault();
+      postSignup();
+    });
+  });
+
+  async function postLogin() {
+    let email = document.getElementById("email").value;
+    let pwd = document.getElementById("pwd").value;
+
+    try {
+      const response = await fetch("https://web-project-8.onrender.com/game1/quiz/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, pwd })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("userEmail", email);
+        window.location.href = "thirdPage.html"; // Redirect without alert
+      } else {
+        alert("Login failed: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      alert("An error occurred while logging in.");
+    }
+  }
+
+  async function postSignup() {
+    let username = document.getElementById("name").value;
+    let email = document.getElementById("signup-email").value;
+    let pwd = document.getElementById("signup-pwd").value;
+
+    try {
+      const response = await fetch("https://web-project-8.onrender.com/game1/quiz/user/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, pwd })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Signup successful! Please log in.");
+        tog(); // Switch to login form
+      } else {
+        alert("Signup failed: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error during signup:", error);
+      alert("An error occurred while signing up.");
+    }
+  }
+</script>
+
+</body>
+</html>

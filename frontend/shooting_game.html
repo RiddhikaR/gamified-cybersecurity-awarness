@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Space Shooter Game</title>
+  <style>
+    body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: black;
+  }
+
+  #introContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #introVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  #watchVideoBtn, #skipBtn {
+    position: absolute;
+    bottom: 50px;
+    padding: 12px 25px;
+    background: linear-gradient(to right, #ff416c, #ff4b2b);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out;
+    z-index: 10;
+  }
+
+  #watchVideoBtn:hover, #skipBtn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(to right, #ff4b2b, #ff416c);
+  }
+
+  #watchVideoBtn {
+    left: 30%;
+    transform: translateX(-50%);
+  }
+
+  #skipBtn {
+    right: 30%;
+    transform: translateX(50%);
+  }
+
+  #gameContainer {
+    display: none;
+  }
+
+  #canvas1 {
+    border: 2px solid black;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+    
+  </style>
+</head>
+
+<body>
+
+<!-- 🎬 Intro Video Section -->
+<div id="introContainer" style="text-align: center;">
+  <video id="introVideo" width="800" height="600" playsinline>
+    <source src="shootvdo.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br />
+  <button id="watchVideoBtn">Watch Intro</button>
+  <button id="skipBtn">Skip to Game</button>
+</div>
+
+<!-- 🕹️ Game Canvas -->
+<div id="gameContainer" style="display: none;">
+  <canvas id="canvas1"></canvas>
+</div>
+
+<script>
+class Player {
+  constructor(game) {
+    this.game = game;
+    this.width = 100;
+    this.height = 100;
+    this.x = this.game.width / 2 - this.width / 2;
+    this.y = this.game.height - this.height;
+    this.speed = 3;
+  }
+  draw(context) {
+    context.drawImage(this.game.playerImage, this.x, this.y, this.width, this.height);
+  }
+  update() {
+    if (this.game.keys.includes('ArrowLeft')) this.x -= this.speed;
+    if (this.game.keys.includes('ArrowRight')) this.x += this.speed;
+    if (this.x < 0) this.x = 0;
+    if (this.x > this.game.width - this.width) this.x = this.game.width - this.width;
+  }
+  shoot() {
+    const projectile = this.game.getProjectile();
+    if (projectile) {
+      projectile.start(this.x + this.width / 2 - projectile.width / 2, this.y);
+    }
+  }
+}
+
+class Projectile {
+  constructor() {
+    this.width = 4;
+    this.height = 20;
+    this.x = 0;
+    this.y = 0;
+    this.speed = 10;
+    this.free = true;
+  }
+  draw(context) {
+    if (!this.free) context.fillRect(this.x, this.y, this.width, this.height);
+  }
+  update() {
+    if (!this.free) {
+      this.y -= this.speed;
+      if (this.y < 0) this.reset();
+    }
+  }
+  start(x, y) {
+    this.x = x;
+    this.y = y;
+    this.free = false;
+  }
+  reset() {
+    this.free = true;
+  }
+}
+
+class Enemy {
+  constructor(game, x, y, size, image) {
+    this.game = game;
+    this.x = x;
+    this.y = y;
+    this.width = size;
+    this.height = size;
+    this.markedForDeletion = false;
+    this.image = image;
+  }
+  draw(context) {
+    context.drawImage(this.image, this.x, this.y, this.width, this.height);
+  }
+  update() {
+    this.game.projectilesPool.forEach(p => {
+      if (!p.free && this.game.checkCollision(this, p)) {
+        this.markedForDeletion = true;
+        p.reset();
+        this.game.score += 10;
+      }
+    });
+
+    if (this.y + this.height >= this.game.player.y - 20) {
+      this.game.gameOver = true;
+      this.game.gameOverReason = "Enemies got too close!";
+    }
+  }
+}
+
+class Wave {
+  constructor(game) {
+    this.game = game;
+    this.enemies = [];
+    this.x = 0;
+    this.y = 0;
+    this.speedX = 1.5;
+
+    for (let row = 0; row < this.game.rows; row++) {
+      for (let col = 0; col < this.game.columns; col++) {
+        const offsetX = col * this.game.enemySize;
+        const offsetY = row * this.game.enemySize;
+
+        const image = this.game.enemyImages[col % 3]; // alternate images
+
+        const enemy = new Enemy(this.game, this.x + offsetX, this.y + offsetY, this.game.enemySize, image);
+        enemy.offsetX = offsetX;
+        enemy.offsetY = offsetY;
+        this.enemies.push(enemy);
+      }
+    }
+  }
+
+  update() {
+    this.x += this.speedX;
+    const rightmost = this.x + this.game.columns * this.game.enemySize;
+    const leftmost = this.x;
+
+    if (rightmost >= this.game.width || leftmost <= 0) {
+      this.speedX *= -1;
+      this.y += this.game.enemySize / 2;
+    }
+
+    this.enemies.forEach(enemy => {
+      enemy.x = this.x + enemy.offsetX;
+      enemy.y = this.y + enemy.offsetY;
+      enemy.update();
+    });
+
+    this.enemies = this.enemies.filter(e => !e.markedForDeletion);
+
+    if (this.enemies.length === 0) {
+      this.game.gameOver = true;
+      this.game.gameOverReason = "You destroyed all enemies!";
+    }
+  }
+
+  render(context) {
+    this.update();
+    this.enemies.forEach(enemy => enemy.draw(context));
+  }
+}
+
+class Game {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.width = canvas.width;
+    this.height = canvas.height;
+    this.player = new Player(this);
+    this.keys = [];
+    this.projectilesPool = [];
+    this.numberOfProjectiles = 10;
+    this.columns = 5;
+    this.rows = 7;
+    this.enemySize = 60;
+    this.score = 0;
+    this.gameOver = false;
+    this.gameOverReason = "";
+    this.scoreSaved = false;
+
+    this.createProjectiles();
+
+    this.background = new Image();
+    this.background.src = 'cyberpunk-city-war-zone--satellite-view-night-more.png';
+
+    this.enemyImages = [
+      new Image(),
+      new Image(),
+      new Image()
+    ];
+    this.enemyImages[0].src = 'virus.png';
+    this.enemyImages[1].src = 'chat1.png';
+    this.enemyImages[2].src = 'chat2.png';
+
+    this.playerImage = new Image();
+    this.playerImage.src = 'shoot.png';
+
+    this.waves = [new Wave(this)];
+
+    window.addEventListener('keydown', e => {
+      if (!this.keys.includes(e.key)) {
+        this.keys.push(e.key);
+        if (e.key === 'Enter' && !this.gameOver) {
+          this.player.shoot();
+        }
+      }
+    });
+    window.addEventListener('keyup', e => {
+      const i = this.keys.indexOf(e.key);
+      if (i > -1) this.keys.splice(i, 1);
+    });
+  }
+
+  render(context) {
+    context.drawImage(this.background, 0, 0, this.width, this.height);
+
+    this.player.draw(context);
+    this.player.update();
+
+    this.projectilesPool.forEach(p => {
+      p.update();
+      p.draw(context);
+    });
+
+    this.waves.forEach(w => w.render(context));
+
+    context.fillStyle = 'black';
+    context.font = '28px Arial';
+    context.fillText('Score: ' + this.score, 20, 40);
+
+    if (this.gameOver) {
+      context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      const boxWidth = 400;
+      const boxHeight = 200;
+      const boxX = this.width / 2 - boxWidth / 2;
+      const boxY = this.height / 2 - boxHeight / 2;
+      context.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+      context.fillStyle = 'white';
+      context.font = '50px Arial';
+      context.fillText("GAME OVER", boxX + 60, boxY + 80);
+      context.font = '24px Arial';
+      context.fillText(this.gameOverReason, boxX + 40, boxY + 130);
+      context.fillText("Final Score: " + this.score, boxX + 100, boxY + 170);
+
+      if (!this.scoreSaved && this.score > 0) {
+        this.scoreSaved = true;
+        setTimeout(() => finishQuiz(this.score), 100);
+      }
+    }
+  }
+
+  createProjectiles() {
+    for (let i = 0; i < this.numberOfProjectiles; i++) {
+      this.projectilesPool.push(new Projectile());
+    }
+  }
+
+  getProjectile() {
+    return this.projectilesPool.find(p => p.free);
+  }
+
+  checkCollision(a, b) {
+    return (
+      a.x < b.x + b.width &&
+      a.x + a.width > b.x &&
+      a.y < b.y + b.height &&
+      a.y + a.height > b.y
+    );
+  }
+}
+
+window.addEventListener("load", () => {
+  const canvas = document.getElementById("canvas1");
+  const ctx = canvas.getContext("2d");
+  canvas.width = 800;
+  canvas.height = 700;
+
+  const game = new Game(canvas);
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    game.render(ctx);
+    if (!game.gameOver) requestAnimationFrame(animate);
+  }
+
+  const introContainer = document.getElementById("introContainer");
+  const gameContainer = document.getElementById("gameContainer");
+  const introVideo = document.getElementById("introVideo");
+
+  watchVideoBtn.addEventListener("click", () => {
+    introVideo.muted = false;
+    introVideo.volume = 1.0;
+    introVideo.play().catch(error => console.error("Playback failed:", error));
+  });
+
+  introVideo.addEventListener("ended", startGame);
+  skipBtn.addEventListener("click", () => {
+    introVideo.pause();
+    startGame();
+  });
+
+  function startGame() {
+    introContainer.style.display = "none";
+    gameContainer.style.display = "block";
+    animate();
+  }
+});
+
+function finishQuiz(score) {
+  const email = localStorage.getItem("userEmail");
+  if (!email) {
+    alert("User not logged in. Score not saved.");
+    return;
+  }
+  fetch('https://web-project-8.onrender.com/game1/score/save-score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, game: "space-shooter", score }),
+  })
+    .then(response => response.json())
+    .then(data => alert("Your score has been saved!"))
+    .catch(error => console.error('Error saving score:', error));
+}
+</script>
+</body>
+</html>

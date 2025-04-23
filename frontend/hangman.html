@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HangMan Game</title>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Open Sans", sans-serif;
+    }
+
+    .main {
+      background-color: crimson;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-image: url("an-electronic-lock-with-buttons-on-it-in-a-futuris.png");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+    }
+
+    .main::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1;
+    }
+
+    .game, .GameOver {
+      position: relative;
+      z-index: 2;
+    }
+
+    .game {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: 900px;
+      height: 470px;
+      margin: 0 auto;
+      border-radius: 10px;
+      background-color: rgba(253, 253, 253, 0.3);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      padding: 25px;
+      gap: 20px;
+    }
+
+    .left {
+      width: 40%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      text-align: center;
+    }
+
+    .left h1 {
+      font-size: 1.5rem;
+    }
+
+    .right {
+      width: 60%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      gap: 1.7rem;
+    }
+
+    .word-display {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .letter {
+      list-style: none;
+      font-weight: bolder;
+      text-transform: uppercase;
+      font-size: 2rem;
+      width: 30px;
+      margin-bottom: 3px;
+      border-bottom: 3px solid #000;
+    }
+
+    .letter.guess {
+      border: transparent;
+      margin-top: -30px;
+    }
+
+    .keyboard {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .btn {
+      width: 50px;
+      height: 40px;
+      border-radius: 5px;
+      border: none;
+      background-color: rgb(30, 28, 28);
+      color: #fff;
+      font-size: 1rem;
+      text-align: center;
+      text-transform: uppercase;
+      font-weight: bolder;
+      cursor: pointer;
+    }
+
+    .GameOver {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      width: 350px;
+      height: 350px;
+      display: none;
+      text-align: center;
+      border-radius: 20px;
+      z-index: 150;
+    }
+
+    .GameOver.show {
+      display: block;
+    }
+
+    .gameoverImg {
+      width: 150px;
+      margin-top: 40px;
+    }
+
+    .GameOver h3 {
+      font-size: 35px;
+    }
+
+    .GameOver h6 {
+      font-size: 15px;
+    }
+
+    .GameOver button {
+      width: 110px;
+      height: 40px;
+      border-radius: 8px;
+      border: none;
+      background-color: rgb(22, 37, 87);
+      color: #fff;
+      margin: 10px;
+    }
+
+    #introContainer {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 200;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      background-color: #000;
+    }
+
+    #introVideo {
+      max-width: 100%;
+      height: auto;
+    }
+
+    #startGameBtn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 18px;
+      background-color: crimson;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- Video Introduction Section -->
+  <div id="introContainer">
+    <video id="introVideo" autoplay muted>
+      <source src="hang.mp4" type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+    <button id="startGameBtn">Start Game</button>
+  </div>
+
+  <div class="main" id="gameContainer" style="display: none;">
+    <div class="game">
+      <div class="left">
+        <img class="img" src="hangman-0.svg" />
+        <h1>HANGMAN GAME</h1>
+      </div>
+      <div class="right">
+        <ul class="word-display"></ul>
+        <h4>Hint: lorem ipsum</h4>
+        <p>Incorrect guesses: <span class="chance" style="color: red">0/6</span></p>
+        <div class="keyboard"></div>
+      </div>
+    </div>
+
+    <div class="GameOver">
+      <img class="gameoverImg" src="lost.gif" />
+      <h3>Game Over!</h3>
+      <h6>The Correct Word Was: <span class="answer" style="color: red">Jazz</span></h6>
+      <button onclick="location.reload()">PLAY AGAIN</button>
+      <button onclick="finishQuiz()">Finish</button>
+    </div>
+  </div>
+
+  <script>
+    const wordList = [
+      { word: "jazz", hint: "A genre of music" },
+      { word: "apple", hint: "A common fruit" },
+      { word: "python", hint: "A programming language" },
+      { word: "space", hint: "Outer region beyond Earth" },
+      { word: "robot", hint: "A mechanical being" }
+    ];
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    let shuffledWordList = shuffleArray([...wordList]);
+    let currentWordIndex = 0;
+
+    const keyboard = document.querySelector(".keyboard");
+    const h4 = document.querySelector("h4");
+    const wordDisplay = document.querySelector(".word-display");
+    const chance = document.querySelector(".chance");
+    const img = document.querySelector(".img");
+    const gameover = document.querySelector(".GameOver");
+    const gameoverimg = document.querySelector(".gameoverImg");
+    const answer = document.querySelector(".answer");
+    const h3 = document.querySelector(".GameOver h3");
+    const h6 = document.querySelector(".GameOver h6");
+
+    let questionCount = 0;
+    let score = 0;
+    let maxQuestions = 5;
+    let count = 0;
+    let word, hint;
+
+    const loadQuestion = () => {
+      keyboard.innerHTML = "";
+      wordDisplay.innerHTML = "";
+      count = 0;
+      chance.innerText = "0/6";
+      img.src = "hangman-0.svg";
+
+      if (currentWordIndex >= shuffledWordList.length) {
+        shuffledWordList = shuffleArray([...wordList]);
+        currentWordIndex = 0;
+      }
+
+      ({ word, hint } = shuffledWordList[currentWordIndex]);
+      currentWordIndex++;
+
+      h4.innerText = `Hint: ${hint}`;
+      for (let i = 0; i < word.length; i++) {
+        const liTag = document.createElement("li");
+        liTag.classList.add("letter");
+        wordDisplay.appendChild(liTag);
+      }
+
+      for (let i = 97; i <= 122; i++) {
+        const button = document.createElement("button");
+        button.classList.add("btn");
+        button.innerText = String.fromCharCode(i);
+        keyboard.appendChild(button);
+      }
+
+      document.querySelectorAll(".btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const letter = btn.innerText;
+          btn.disabled = true;
+          btn.style.backgroundColor = "#ccc";
+          btn.style.color = "#666";
+          btn.style.cursor = "not-allowed";
+
+          const matches = [];
+          word.split("").forEach((char, index) => {
+            if (char === letter.toLowerCase()) matches.push(index);
+          });
+
+          if (matches.length === 0) {
+            count++;
+            chance.innerText = `${count}/6`;
+            if (count === 1) img.src = "hangman-1.svg";
+            else if (count === 2) img.src = "hangman-2.svg";
+            else if (count === 3) img.src = "hangman-4.svg";
+            else if (count === 4) img.src = "hangman-5.svg";
+            else if (count >= 6) {
+              img.src = "hangman-6.svg";
+              setTimeout(() => gameOver(true), 200);
+            }
+          } else {
+            matches.forEach((i) => {
+              const letterElems = document.querySelectorAll(".letter");
+              letterElems[i].innerText = letter;
+              letterElems[i].classList.add("guess");
+            });
+            checkWin();
+          }
+        });
+      });
+    };
+
+    const checkWin = () => {
+      const guessedWord = [...document.querySelectorAll(".letter")]
+        .map((li) => li.innerText.toLowerCase())
+        .join("");
+      if (guessedWord === word) {
+        gameOver(false);
+      }
+    };
+
+    const gameOver = (lost) => {
+      gameover.classList.add("show");
+      document.querySelector(".game").style.opacity = 0.8;
+      answer.innerText = word;
+
+      if (!lost) {
+        gameoverimg.src = "victory.gif";
+        h3.innerText = "Congrats!";
+        h6.innerText = "You Guessed The Correct Answer!";
+        score++;
+      }
+
+      questionCount++;
+      if (questionCount >= maxQuestions) {
+        setTimeout(() => showFinalScore(), 1500);
+      } else {
+        setTimeout(() => resetGame(), 1500);
+      }
+    };
+
+    const resetGame = () => {
+      gameover.classList.remove("show");
+      document.querySelector(".game").style.opacity = 1;
+      loadQuestion();
+    };
+
+    const showFinalScore = () => {
+      gameover.classList.add("show");
+      document.querySelector(".game").style.display = "none";
+      gameoverimg.src = "victory.gif";
+      h3.innerText = "Game Over!";
+      h6.innerHTML = `You answered ${score} out of ${maxQuestions} correctly.`;
+    };
+
+    function finishQuiz() {
+      const email = localStorage.getItem("userEmail");
+      if (!email) {
+        alert("User not logged in. Score not saved.");
+        return;
+      }
+      fetch("https://web-project-8.onrender.com/game1/score/save-score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, game: "hangman", score }),
+      })
+        .then((res) => res.json())
+        .then(() => alert("Your score has been saved!"))
+        .catch((err) => console.error("Error saving score:", err));
+    }
+
+    const introContainer = document.getElementById("introContainer");
+    const gameContainer = document.getElementById("gameContainer");
+    const startGameBtn = document.getElementById("startGameBtn");
+    const introVideo = document.getElementById("introVideo");
+
+    startGameBtn.addEventListener("click", () => {
+      introVideo.pause();
+      introContainer.style.display = "none";
+      gameContainer.style.display = "block";
+    });
+
+    introVideo.addEventListener("ended", () => {
+      introContainer.style.display = "none";
+      gameContainer.style.display = "block";
+    });
+
+    loadQuestion();
+  </script>
+</body>
+</html>

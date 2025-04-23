@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Email Quiz Game</title>
+  <style>
+    body {
+      margin: 0;
+      background: #171516;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .laptop {
+      background: #333;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+      width: 900px;
+      height: 500px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .screen {
+      background: #faebeb;
+      flex-grow: 1;
+      border-radius: 10px;
+      padding: 20px;
+      overflow-y: auto;
+      position: relative;
+      border: 3px solid #444;
+    }
+
+    .power-btn {
+      position: absolute;
+      top: -10px;
+      right: 10px;
+      width: 16px;
+      height: 16px;
+      background: red;
+      border-radius: 50%;
+      box-shadow: 0 0 5px red;
+    }
+
+    .keyboard-shadow {
+      height: 30px;
+      background: rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      border-radius: 0 0 15px 15px;
+      margin-top: 10px;
+    }
+
+    .question {
+      font-size: 16px;
+      white-space: pre-wrap;
+      color: #000;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    .question.show {
+      opacity: 1;
+    }
+
+    .button {
+      margin-top: 20px;
+    }
+
+    .button button {
+      display: block;
+      margin: 10px 0;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      width: 100%;
+      border: 1px solid #ccc;
+      background-color: #f3f3f3;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .button button:hover {
+      background-color: #ddd;
+    }
+
+    .next, .finish, .start {
+      margin-top: 15px;
+      padding: 15px 30px;
+      font-weight: bold;
+      border: none;
+      background-color: #68a8d9;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .next:hover, .finish:hover, .start:hover {
+      background-color: #005fa3;
+    }
+
+    .hide {
+      display: none;
+    }
+
+    .blinking-cursor {
+      font-weight: bold;
+      font-size: 20px;
+      color: #333;
+      animation: blink 1s step-start infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .loading {
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+
+    /* Centering the start button */
+    .start {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 80px;
+      font-size: 28px;
+      border-radius: 10px;
+      background-color: #738b93;
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .start:hover {
+      background-color:#58655f;
+    }
+
+    /* Styling for the scoreboard */
+    .scoreboard {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #fff;
+      font-size: 24px;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    /* Positioning next button to the right */
+    .next {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+    }
+
+    /* Finish button positioned below the scoreboard */
+    .finish {
+      position: absolute;
+      top: calc(50% + 80px); /* Below the scoreboard */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      background-color: #f44336;
+    }
+
+    .finish:hover {
+      background-color: #e53935;
+    }
+  </style>
+</head>
+<body>
+    <!-- Intro Video Overlay -->
+<div id="intro-video-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; box-sizing: border-box;">
+    <video id="introVideo" style="max-width: 90%; max-height: 70vh;" autoplay muted playsinline>
+      <source src="quiz vid.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+    <button id="skipVideo" style="margin-top: 20px; padding: 12px 24px; font-size: 18px; cursor: pointer; background-color: #444; color: white; border: none; border-radius: 6px;">Skip</button>
+  </div>
+  
+  
+  
+
+<div class="laptop">
+  <div class="power-btn"></div>
+  <div class="screen">
+    <div class="card">
+      <div>
+        <button class="start">Start</button>
+      </div>
+      <div class="main hide">
+        <div class="loading">Loading inbox<span class="blinking-cursor">|</span></div>
+        <pre class="question">Question</pre>
+        <div class="button"></div>
+        <button class="next">Next</button>
+        <button class="finish hide">Finish</button>
+      </div>
+    </div>
+  </div>
+  <div class="keyboard-shadow"></div>
+</div>
+
+<script>
+  const q = [
+    {
+      question: `Dear User,\n\nWe have detected unusual activity on your Microsoft account and suspect unauthorized access from an IP in Russia.\n\nTo prevent permanent lockout, follow these urgent steps:\n1. Click the link\n2. Download the patch\n\nsupport@microsoft-security-check.com`,
+      choice: ["Tech Support Scam", "Legit Microsoft Email", "Phishing Scam"],
+      ans: "Phishing Scam"
+    },
+    {
+      question: `Dear Taxpayer,\n\nYou are eligible for a refund of ₹34,275 INR.\nSubmit your PAN, Aadhaar, and bank details at:\n👉 http://incometax-india-verify-refund.com\n\nIncome Tax Department`,
+      choice: ["Legit Income Tax Refund", "Phishing Scam", "Tax Refund Email"],
+      ans: "Phishing Scam"
+    },
+    {
+      question: `YOU HAVE WON $1.5 MILLION!\n\nReply with your ID proof and contact info to claim.\n\n– Global Lottery Promotions`,
+      choice: ["Lottery Scam", "Legit Giveaway", "Phishing Scam"],
+      ans: "Lottery Scam"
+    },
+    {
+      question: `Order Confirmation: Kindle Paperwhite (₹10,999)\n\nTrack your order:\nhttps://www.amazon.in/your-orders\n\n—The Amazon.in Team`,
+      choice: ["Legit Amazon Order", "Phishing Scam", "Fake Order Confirmation"],
+      ans: "Legit Amazon Order"
+    },
+    {
+      question: `Hi,\n\nJames Mathews accepted your LinkedIn request.\nView profile:\nhttps://www.linkedin.com/in/james-mathews\n\n—The LinkedIn Team`,
+      choice: ["Legit LinkedIn Connection", "Phishing Scam", "Social Media Fraud"],
+      ans: "Legit LinkedIn Connection"
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+  const start = document.querySelector(".start");
+  const main = document.querySelector(".main");
+  const question = document.querySelector(".question");
+  const button = document.querySelector(".button");
+  const next = document.querySelector(".next");
+  const finish = document.querySelector(".finish");
+
+  const correctSound = new Audio('correct.mp3');
+  const incorrectSound = new Audio('incorrect.mp3');
+
+  start.addEventListener("click", () => {
+    loadQuestion();
+    document.querySelector(".loading").style.display = "none";
+    start.classList.add("hide");
+  });
+
+  next.addEventListener("click", inc);
+  finish.addEventListener("click", finishQuiz);
+
+  function inc() {
+    button.innerHTML = "";
+    current++;
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    if (current >= q.length) {
+      question.textContent = ``;
+      button.innerHTML = "";
+      next.classList.add("hide");
+      finish.classList.remove("hide");
+      showScoreboard();
+    } else {
+      main.classList.remove("hide");
+      const currentQ = q[current];
+      question.classList.remove('show');
+      setTimeout(() => {
+        question.textContent = currentQ.question;
+        question.classList.add('show');
+      }, 200);
+      button.innerHTML = "";
+      currentQ.choice.forEach((el) => {
+        let b = document.createElement("button");
+        b.textContent = el;
+        button.appendChild(b);
+        b.addEventListener("click", () => verify(el, b));
+      });
+    }
+  }
+
+  function verify(buttontext, b) {
+    const buttons = button.querySelectorAll("button");
+    if (q[current].ans === buttontext) {
+      b.style.backgroundColor = "green";
+      score++;
+      correctSound.play();
+    } else {
+      b.style.backgroundColor = "red";
+      incorrectSound.play();
+    }
+    buttons.forEach(btn => btn.disabled = true);
+  }
+
+  function finishQuiz() {
+    const email = localStorage.getItem("userEmail");
+    if (!email) {
+      alert("User not logged in. Score not saved.");
+      return;
+    }
+    fetch('https://web-project-8.onrender.com/game1/score/save-score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, game: "emailQuiz", score }),
+    })
+    .then(response => response.json())
+    .then(data => alert("Your score has been saved!"))
+    .catch(error => console.error('Error saving score:', error));
+  }
+
+  function showScoreboard() {
+    const scoreboard = document.createElement('div');
+    scoreboard.classList.add('scoreboard');
+    scoreboard.innerHTML = `Your Final Score: ${score} / ${q.length}`;
+    document.body.appendChild(scoreboard);
+  }
+  const introOverlay = document.getElementById('intro-video-overlay');
+const introVideo = document.getElementById('introVideo');
+const skipVideo = document.getElementById('skipVideo');
+
+introVideo.addEventListener('ended', hideIntro);
+skipVideo.addEventListener('click', hideIntro);
+
+function hideIntro() {
+  introOverlay.style.display = 'none';
+}
+
+</script>
+
+</body>
+</html>
+
+
